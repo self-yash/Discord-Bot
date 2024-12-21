@@ -18,12 +18,6 @@ TOKEN = os.getenv("bot_token")
 
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-# List for "Foxzy bade log"
-bade_log = [
-    "bade log", "ultra bade log", "super bade log", "god of bade log",
-    "real bade log", "bade log ultra pro max"
-]
-
 if TOKEN is None:
     print("Bot token is not set")
 else:
@@ -37,51 +31,12 @@ else:
         if message.author == bot.user:
             return
 
-        if message.content.startswith('!kingcobra'):
-            await message.channel.send('KingCobra is GORBL!')
+        if message.content.startswith('!hello'):
+            await message.channel.send('Hello')
 
         await bot.process_commands(message)
 
-    @bot.command()
-    async def hello(ctx):
-        await ctx.send('Hello!')
-
-    @bot.command()
-    async def say(ctx, *, message):
-        await ctx.send(message)
-
-    @bot.command()
-    async def server(ctx):
-        await ctx.send(ctx.guild.name)
-
-    @bot.command()
-    async def foxzy(ctx):
-        await ctx.send(f"Foxzy is {random.choice(bade_log)}")
-
-    @bot.command()
-    async def ping(ctx):
-        latency = bot.latency
-        ping_ms = round(latency * 1000)
-        await ctx.send(f'Pong! Latency: {ping_ms}ms')
-
-    @bot.command()
-    async def sum(ctx, num1: int, num2: int):
-        result = num1 + num2
-        await ctx.send(f'The sum of {num1} and {num2} is {result}')
-
-    @bot.command()
-    async def feature(ctx, enabled: bool):
-        if enabled:
-            await ctx.send("Feature is Enabled")
-        else:
-            await ctx.send("Feature is Disabled")
-
-    @bot.command()
-    async def joined(ctx, *, member: discord.Member):
-        join_date = member.joined_at.strftime('%B %d, %Y at %I:%M %p')
-        await ctx.send(f'{member} joined on {join_date}')
-
-    def check(ctx):
+    def check(ctx):  #Function for Checking if the message is sent by the same user and in same channel (can be used in wait_for)
         def inner(m):
             return m.author == ctx.author
 
