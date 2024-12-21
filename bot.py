@@ -87,68 +87,155 @@ else:
 
         return inner
 
-async def withdrawMoney(ctx,userName):
-    await ctx.send("Amount to Withdraw?")
-    respo=await bot.wait_for('message',check=check(ctx),timeout=37.0)
-    newAmmount =  int(respo)
-
-    if newAmmount < 0:
-        await ctx.send("Level nikal dunga bakchodi kri toh")
+    async def withdrawMoney(ctx,userName):
+        await ctx.send("Amount to Withdraw?")
+        respo=await bot.wait_for('message',check=check(ctx),timeout=37.0)
+        newAmmount =  int(respo.content)
     
-    doc_path = db.collection('users').document(userName)
-    doc = doc_path.get()
-    doc = doc.to_dict()
+        if newAmmount < 0:
+            await ctx.send("Level nikal dunga bakchodi kri toh")
+            return
+    
+        doc_path = db.collection('users').document(userName)
+        doc = doc_path.get()
+        doc = doc.to_dict()
 
-    if doc['Balance'] > newAmmount:
-        await ctx.send(f"Are you sure? You want to withdraw{newAmmount}? (yes/no)")
-        confirm = await bot.wait_for('message',check=check(ctx),timeout=40.0)
+        if doc['Balance'] > newAmmount:
+            await ctx.send(f"Are you sure? You want to withdraw {newAmmount}? (yes/no)")
+            confirm = await bot.wait_for('message',check=check(ctx),timeout=40.0)
 
-        if confirm.content.lower() == 'yes':
-            updatedamt = doc['Balance'] - newAmmount
-            doc = doc_path.update({
-                'Balance' : updatedamt
-            })
+            if confirm.content.lower() == 'yes':
+                updatedamt = doc['Balance'] - newAmmount
+                doc = doc_path.update({
+                    'Balance' : updatedamt
+                })
 
-            await ctx.send(f'{str(newAmmount)} Ammount withdraw')
-            await ctx.send(f'updated balance: {str(updatedamt)}')
-        elif confirm.content.lower() == 'no':
-            await ctx.send('withdraw canncled.')
+                await ctx.send(f'{str(newAmmount)} Ammount withdraw')
+                await ctx.send(f'Updated Balance: {str(updatedamt)}')
+            elif confirm.content.lower() == 'no':
+                await ctx.send('withdraw Cancelled.')
+            else:
+                await ctx.send('Wrong input')
         else:
-            await ctx.send('worng input')
-    else:
-        await ctx.send('insufficent balance.')
+            await ctx.send('insufficent balance.')
 
-async def showService(ctx,userName):
-    doc_path = db.collection('users').document(userName)
-    doc = doc_path.get()
-    doc = doc.to_dict()
+    async def dipostieMoney(ctx,userName):
+        await ctx.send("Amount to be Deposited?")
+        try:
+            respo= await bot.wait_for('message',check=check(ctx),timeout=37.0)
+        except:
+            await ctx.send("Timed Out. Login Again")
+            return 
+            
+        newAmmount=int(respo.content)
 
-    await ctx.send(f"\n--------------------- Wellcome {doc['FullName']} -------------------------\n")
+        if newAmmount < 0:
+            await ctx.send("Ek raipta lgaunga")
+            return
+    
+        doc_path = db.collection('users').document(userName)
+        doc = doc_path.get()
+        doc = doc.to_dict()
 
-    await ctx.send('Sevrice Avalable: ')
-    await ctx.send('1. withdraw money')
-    await ctx.send('2. deposite money')
-    await ctx.send('3. balance check')
-    await ctx.send('4. Account Closing')
-    await ctx.send('5. Logout')
+        updatedamt = doc['Balance'] + newAmmount
+        doc = doc_path.update({
+           'Balance' : updatedamt
+        })
 
-    respo = await bot.wait_for('message',check=check(ctx),timeout=45.0)
-    choise= int(respo.content)
+        await ctx.send(f'{str(newAmmount)} Ammount added')
+        await ctx.send(f'updated balance: {str(updatedamt)}')
 
-    if choise == 1:
-        await withdrawMoney(ctx,userName)
-        await showService(ctx,userName)
-    elif choise == 2:
-        # dipostieMoney(UserName)
-        await showService(ctx,userName)
-    elif choise == 3:
-        await ctx.send(f"your Account Balance is {str(doc['Balance'])}")
-        await showService(ctx,userName)
-    elif choise == 4:
-        # accountClosing(userName)
-        await showService(ctx,userName)
-    elif choise == 5:
-        await ctx.send('Logout Done!.')
+    async def accountClosing(ctx,userName):
+        doc_path = db.collection('users').document(userName)
+        doc = doc_path.get()
+        doc = doc.to_dict()
+
+        if doc['Balance'] > 0:
+            await ctx.send('You Need To withdraw your money first.')
+        else:
+            doc = doc_path.get()
+            doc.delete()
+            await ctx.send('Your Account Has Closed.')
+
+    async def TakeUserData(ctx,fullname,DoB,Branch):
+        if fullname == '':
+            await ctx.send('Username cannot be empty. Gharwalo ne naam nhi diya kya bs*k')
+            return
+
+        if len(DoB) != 10:
+            await ctx.send('Invalid Date of Birth')
+            return
+
+        if Branch == '':
+            await ctx.send("Branch Cannot be Empty")
+            return
+
+        doc = {
+            'FullName': fullname,
+            'DoB': DoB,
+            'Branch': Branch,
+            'Balance': 0 
+        }
+        return doc
+
+    async def MakeUserName(ctx):
+        UserName = str(input("Enter Your UserName: "))
+        doc_path = db.collection('users').document(UserName)
+        finddoc = doc_path.get()
+
+        if finddoc.exists:
+            await ctx.send("Username already taken try another.")
+            return
+        else:
+            return UserName
+
+
+    async def showService(ctx,userName):
+        doc_path = db.collection('users').document(userName)
+        doc = doc_path.get()
+        doc = doc.to_dict()
+
+        await ctx.send(f"\n--------------------- Welcome {doc['FullName']} -------------------------\n")
+        await ctx.send('Service Available: \n1. Withdraw money\n2. Deposit money\n3. Check Balance\n4. Account Closing\n5. Logout')
+
+        respo = await bot.wait_for('message',check=check(ctx),timeout=45.0)
+        try:
+            choise= int(respo.content)
+        except:
+            await ctx.send("Timed Out")
+            return
+        if choise == 1:
+            await withdrawMoney(ctx,userName)
+            await showService(ctx,userName)
+        elif choise == 2:
+            await dipostieMoney(ctx,userName)
+            await showService(ctx,userName)
+        elif choise == 3:
+            await ctx.send(f"Your Account Balance is {str(doc['Balance'])}")
+            await showService(ctx,userName)
+        elif choise == 4:
+            await accountClosing(ctx,userName)
+            await showService(ctx,userName)
+        elif choise == 5:
+            await ctx.send('Logged Out!')
+
+    @bot.command()
+    async def register(ctx,user_name,password,date_of_birth,bra):
+        UserDoc = await TakeUserData(ctx,user_name,date_of_birth,bra)
+        passwd=1
+        DocName = user_name
+        if len(password)==4 and password.isdigit():
+            passwd = int(password)
+        else:
+            await ctx.send("Password must be 4 digit and numeric")
+            return
+
+        UserDoc['password'] = passwd
+
+        doc_path = db.collection('users').document(DocName)
+        doc_path.set(UserDoc)
+
+        await ctx.send(f'You are now registered as {user_name}.')
 
     @bot.command()
     async def login(ctx, user_name, password):
@@ -171,4 +258,4 @@ async def showService(ctx,userName):
         else:
             await ctx.send("User not found. Use `.signup` to create a new account.")
 
-    bot.run(TOKEN)
+bot.run(TOKEN)
