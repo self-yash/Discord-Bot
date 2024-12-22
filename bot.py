@@ -190,7 +190,15 @@ else:
         doc_path = db.collection('users').document(DocName)
         doc_path.set(UserDoc)
 
-        await ctx.send(f'You are now registered as {user_name}.')
+        embed=discord.Embed(title='Bank Account',
+                            color=0x00ffff)
+        embed.set_author(name="Reserve Bank of Fester")
+        embed.add_field(name="Username",value=f"{user_name}",inline=False)
+        embed.add_field(name="Date of Birth",value=f"{date_of_birth}",inline=False)
+        embed.add_field(name="Branch",value=f"{bra}",inline=False)
+
+        await ctx.send('You are now registered!')
+        await ctx.send(embed=embed)
 
     @bot.command()
     async def login(ctx, user_name, password):
